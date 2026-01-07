@@ -204,7 +204,7 @@ Transcript:
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.3,  # Lower temperature for more focused summaries
-                    max_output_tokens=2048,  # Reasonable limit for summaries
+                    max_output_tokens=8192,  # Increased for detailed historical summaries with diagrams
                 ),
             )
 
