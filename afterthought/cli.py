@@ -13,6 +13,7 @@ from afterthought.db.tracking_db import TrackingDatabase
 from afterthought.parsers.ttml_parser import parse_ttml_file
 from afterthought.summarizer.gemini_client import GeminiClient
 from afterthought.output.markdown_writer import MarkdownWriter
+from afterthought.automation.podcast_player import PodcastPlayerAutomation
 
 
 @click.command()
@@ -51,6 +52,11 @@ from afterthought.output.markdown_writer import MarkdownWriter
     is_flag=True,
     help="Show processing statistics and exit",
 )
+@click.option(
+    "--fetch-missing",
+    is_flag=True,
+    help="Automatically fetch missing transcripts by triggering playback in Podcasts app",
+)
 def main(
     channel: Optional[str],
     days: Optional[int],
@@ -58,6 +64,7 @@ def main(
     dry_run: bool,
     verbose: bool,
     stats: bool,
+    fetch_missing: bool,
 ):
     """
     AfterThought - Summarize your podcast episodes.
@@ -108,6 +115,8 @@ def main(
             click.echo(f"  Channel Filter: {channel} (fuzzy match)")
         if force:
             click.echo(f"  Force Re-process: Enabled")
+        if fetch_missing:
+            click.echo(f"  Auto-Fetch Transcripts: Enabled")
         if dry_run:
             click.echo(f"  Dry Run: Enabled (no changes will be made)")
         click.echo()
@@ -183,6 +192,9 @@ def main(
         )
         markdown_writer = MarkdownWriter(settings.obsidian_output_path)
 
+        # Initialize automation if fetch_missing is enabled
+        automation = PodcastPlayerAutomation() if fetch_missing else None
+
         with TrackingDatabase(settings.tracking_db_path) as tracking_db:
             for i, episode in enumerate(episodes, 1):
                 click.echo(f"[{i}/{len(episodes)}] {episode.podcast_channel}")
@@ -196,6 +208,7 @@ def main(
                         markdown_writer,
                         settings,
                         verbose,
+                        automation,
                     )
 
                     if result["success"]:
@@ -251,6 +264,7 @@ def process_episode(
     markdown_writer: MarkdownWriter,
     settings,
     verbose: bool,
+    automation: Optional[PodcastPlayerAutomation] = None,
 ) -> dict:
     """
     Process a single episode: load transcript, summarize, write markdown.
@@ -261,12 +275,30 @@ def process_episode(
         markdown_writer: Markdown writer
         settings: Application settings
         verbose: Verbose output flag
+        automation: Optional podcast player automation for fetching missing transcripts
 
     Returns:
         Dict with success status, message, output_path, and tokens_used
     """
     # Check for transcript
-    if not episode.transcript_identifier:
+    transcript_missing = not episode.transcript_identifier
+
+    # Try to fetch transcript if missing and automation is enabled
+    if transcript_missing and automation:
+        click.echo("    ⚠ No transcript identifier found")
+        if automation.trigger_transcript_download(episode):
+            click.echo("    ✓ Playback triggered, checking for transcript...")
+            # Note: transcript_identifier might still be None after fetch
+            # This is expected - we'll check the file system below
+            transcript_missing = False  # Allow to continue and check file system
+        else:
+            return {
+                "success": False,
+                "message": "No transcript available (fetch failed)",
+                "output_path": None,
+                "tokens_used": 0,
+            }
+    elif transcript_missing:
         return {
             "success": False,
             "message": "No transcript available",
@@ -275,16 +307,44 @@ def process_episode(
         }
 
     # Find TTML file
-    ttml_pattern = str(settings.ttml_cache_path / "**" / f"*{episode.transcript_identifier}*")
+    if episode.transcript_identifier:
+        ttml_pattern = str(settings.ttml_cache_path / "**" / f"*{episode.transcript_identifier}*")
+    else:
+        # If we just fetched it, search for any new TTML files for this episode
+        # Use episode UUID as fallback search
+        ttml_pattern = str(settings.ttml_cache_path / "**" / f"*{episode.uuid}*")
+
     matches = glob.glob(ttml_pattern, recursive=True)
 
     if not matches:
-        return {
-            "success": False,
-            "message": f"Transcript file not found: {episode.transcript_identifier}",
-            "output_path": None,
-            "tokens_used": 0,
-        }
+        # If automation is enabled and we haven't tried yet, try to fetch
+        if automation and not transcript_missing:
+            click.echo("    ⚠ Transcript file not found in cache")
+            if automation.trigger_transcript_download(episode):
+                click.echo("    ✓ Playback triggered, rechecking...")
+                # Retry finding the file
+                matches = glob.glob(ttml_pattern, recursive=True)
+                if not matches:
+                    return {
+                        "success": False,
+                        "message": "Transcript file not found after fetch attempt",
+                        "output_path": None,
+                        "tokens_used": 0,
+                    }
+            else:
+                return {
+                    "success": False,
+                    "message": "Transcript file not found (fetch failed)",
+                    "output_path": None,
+                    "tokens_used": 0,
+                }
+        else:
+            return {
+                "success": False,
+                "message": f"Transcript file not found: {episode.transcript_identifier}",
+                "output_path": None,
+                "tokens_used": 0,
+            }
 
     ttml_path = Path(matches[0])
     if verbose:

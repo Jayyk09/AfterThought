@@ -127,10 +127,29 @@ Enable detailed logging:
 python -m afterthought --verbose
 ```
 
+### Auto-Fetch Missing Transcripts
+
+Automatically trigger playback in Podcasts app to download missing transcripts:
+
+```bash
+python -m afterthought --fetch-missing
+python -m afterthought -c "History of Rome" --fetch-missing
+```
+
+When enabled, AfterThought will:
+1. Detect episodes without transcripts
+2. Open the episode in Apple Podcasts app
+3. Play it briefly to trigger transcript download
+4. Wait 10 seconds for download
+5. Retry processing the episode
+
+This is useful for episodes you've played on iOS that don't have transcripts cached on your Mac yet.
+
 ### Combined Options
 
 ```bash
 python -m afterthought -c "All-In" -d 30 -f -v
+python -m afterthought --channel "History" --fetch-missing --verbose
 ```
 
 ## CLI Options
@@ -140,6 +159,7 @@ python -m afterthought -c "All-In" -d 30 -f -v
 | `--channel` | `-c` | Fuzzy match podcast channel name |
 | `--days` | `-d` | Episodes played in last N days (default: 7) |
 | `--force` | `-f` | Re-process already summarized episodes |
+| `--fetch-missing` | | Auto-fetch missing transcripts by triggering playback |
 | `--dry-run` | | Show what would be processed without executing |
 | `--verbose` | `-v` | Enable verbose output |
 | `--stats` | | Show processing statistics and exit |
