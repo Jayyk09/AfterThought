@@ -184,30 +184,38 @@ class MarkdownWriter:
         """
         lines = ["---"]
 
-        # Type and basic info
+        # Core metadata
         lines.append("type: podcast-summary")
-        lines.append(f'episode_title: "{self._escape_yaml(episode.title)}"')
-        lines.append(f'podcast_channel: "{self._escape_yaml(episode.podcast_channel)}"')
+        lines.append("cssclass: podcast")
+
+        # Title and aliases for better linking
+        lines.append(f'title: "{self._escape_yaml(episode.title)}"')
+        lines.append("aliases:")
+        lines.append(f'  - "{self._escape_yaml(episode.title)}"')
+
+        # Podcast info
+        lines.append(f'podcast: "[[{self._escape_yaml(episode.podcast_channel)}]]"')
 
         if episode.podcast_author:
-            lines.append(f'podcast_author: "{self._escape_yaml(episode.podcast_author)}"')
+            lines.append(f'author: "{self._escape_yaml(episode.podcast_author)}"')
 
         # Dates
         if episode.publish_date:
-            lines.append(f"publish_date: {episode.publish_date.strftime('%Y-%m-%d')}")
+            lines.append(f"date: {episode.publish_date.strftime('%Y-%m-%d')}")
 
         if episode.last_played:
-            lines.append(
-                f"last_played: {episode.last_played.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-
-        lines.append(f"generated_date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            lines.append(f"listened: {episode.last_played.strftime('%Y-%m-%d')}")
 
         # Duration
         if episode.duration > 0:
             lines.append(f'duration: "{episode.duration_formatted}"')
 
-        # Transcript info
+        # Tags placeholder (AI will add more in content)
+        lines.append("tags:")
+        lines.append("  - podcast")
+        lines.append(f"  - {self._sanitize_tag(episode.podcast_channel)}")
+
+        # Status tracking
         lines.append(f"transcript_available: {str(transcript_available).lower()}")
 
         if episode.transcript_provider:
@@ -237,6 +245,22 @@ class MarkdownWriter:
         """
         # Escape double quotes
         return text.replace('"', '\\"')
+
+    def _sanitize_tag(self, text: str) -> str:
+        """
+        Sanitize text for use as an Obsidian tag.
+
+        Args:
+            text: Text to convert to tag format
+
+        Returns:
+            Tag-safe string
+        """
+        # Remove special characters, replace spaces with hyphens
+        import re
+        tag = re.sub(r'[^\w\s-]', '', text)
+        tag = re.sub(r'\s+', '-', tag)
+        return tag.lower()
 
     def _generate_fallback_content(
         self,

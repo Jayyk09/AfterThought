@@ -23,24 +23,71 @@ class SummaryResult:
 class GeminiClient:
     """Client for Google Gemini API summarization."""
 
-    DEFAULT_PROMPT_TEMPLATE = """You are summarizing a podcast episode transcript. Your goal is to create a comprehensive yet concise summary that captures the key information from the episode.
+    DEFAULT_PROMPT_TEMPLATE = """You are an expert historian and Obsidian knowledge management specialist. Convert this podcast transcript into a concise, interconnected summary optimized for Obsidian's graph view.
 
-Please provide:
+**CRITICAL OBSIDIAN FORMATTING RULES:**
 
-1. **Overview** (2-3 sentences): A high-level summary of what the episode is about and the main themes discussed.
+1. **Wiki Links for Connections:** Wrap ALL important concepts, people, places, events, and themes in [[double brackets]]
+   - Examples: [[Roman Empire]], [[Julius Caesar]], [[Battle of Cannae]], [[Republicanism]]
+   - This creates nodes in Obsidian's graph view
 
-2. **Key Topics**: List the main topics discussed in bullet point format. Be specific and include important details.
+2. **Tags for Categories:** Add relevant tags using #hashtag format
+   - Use tags for: periods (#AncientRome, #MedievalEurope), themes (#MilitaryHistory, #PoliticalPhilosophy), regions (#Mediterranean)
 
-3. **Notable Quotes or Insights**: Highlight 2-3 interesting quotes, insights, or key points that stood out in the discussion.
+3. **Mermaid Diagrams:** Include ONE timeline or relationship diagram using Mermaid syntax
+   - For historical episodes: use timeline format
+   - For concept-heavy episodes: use flowchart or graph
 
-4. **Action Items or Takeaways**: If applicable, list any practical advice, recommendations, or conclusions that listeners should remember.
+4. **Concise Bullets:** Use nested bullet points, not paragraphs. Be direct and information-dense.
 
-Keep your summary informative but concise. Focus on substance over length.
+**REQUIRED STRUCTURE:**
+
+## Summary
+- 2-3 concise bullet points capturing the core historical narrative
+- Link all key concepts: [[Person]], [[Event]], [[Place]], [[Concept]]
+
+## Historical Context
+- Background information with wiki links
+- Nested structure showing relationships:
+  - [[Major Event]]
+    - [[Key Figure]] and their role
+    - [[Political Context]]
+    - [[Cultural Significance]]
+
+## Key Events & Developments
+- Chronological or thematic breakdown
+- Each point should link entities: "[[Caesar]] crossed the [[Rubicon]] in [[49 BC]]"
+- Deep nesting for cause-effect relationships
+
+## Notable Quotes
+- 2-3 significant quotes with speaker attribution
+- Brief context or significance (1 line max)
+
+## Visual Timeline/Diagram
+```mermaid
+timeline
+    title [Episode Topic]
+    [Period] : [Event 1]
+             : [Event 2]
+    [Period] : [Event 3]
+```
+
+**TAGS TO ADD:**
+Add 5-10 relevant tags at the bottom in this format:
+Tags: #HistoricalPeriod #Theme1 #Theme2 #Region #KeyConcept
+
+**LINKING STRATEGY:**
+- Link historical figures: [[Marcus Aurelius]], [[Cicero]]
+- Link events: [[Punic Wars]], [[Fall of Rome]]
+- Link places: [[Rome]], [[Carthage]], [[Mediterranean]]
+- Link concepts: [[Stoicism]], [[Republic]], [[Empire]]
+- Link time periods: [[Late Republic]], [[Pax Romana]]
+
+Be CONCISE. No fluff. Dense information. Heavy linking for graph connectivity.
 
 ---
 
-## Transcript:
-
+Transcript:
 {transcript}"""
 
     def __init__(

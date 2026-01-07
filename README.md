@@ -180,33 +180,59 @@ AfterThought creates markdown files organized by podcast channel:
 
 ### Markdown File Structure
 
-Each episode summary includes:
+Each episode summary is **optimized for Obsidian's graph view** with extensive linking and tagging:
 
 **Frontmatter (YAML):**
 ```yaml
 ---
 type: podcast-summary
-episode_title: "Episode Title"
-podcast_channel: "Channel Name"
-podcast_author: "Author Name"
-publish_date: 2026-01-07
-last_played: 2026-01-07 10:30:00
-generated_date: 2026-01-07 15:45:23
-duration: "45:30"
+cssclass: podcast
+title: "The Punic Wars"
+aliases:
+  - "The Punic Wars"
+podcast: "[[The History of Rome]]"
+author: "Mike Duncan"
+date: 2007-10-15
+listened: 2026-01-07
+duration: "18:45"
+tags:
+  - podcast
+  - the-history-of-rome
 transcript_available: true
-transcript_provider: "Apple"
-input_tokens: 15234
-output_tokens: 523
 ai_model: "gemini-2.0-flash-exp"
-episode_uuid: "ABC123..."
 ---
 ```
 
-**Summary Content:**
-- **Overview**: 2-3 sentence high-level summary
-- **Key Topics**: Main topics discussed in bullet points
-- **Notable Quotes or Insights**: 2-3 interesting highlights
-- **Action Items or Takeaways**: Practical advice and conclusions
+**Summary Content (Obsidian-Optimized):**
+
+- **Wiki Links**: All concepts, people, places, and events wrapped in `[[double brackets]]`
+  - Examples: `[[Roman Republic]]`, `[[Hannibal]]`, `[[Battle of Cannae]]`
+  - Creates interconnected nodes in graph view
+
+- **Tags**: Categorization with `#hashtags`
+  - Periods: `#AncientRome`, `#LatinAmerica`
+  - Themes: `#MilitaryHistory`, `#PoliticalPhilosophy`
+  - Regions: `#Mediterranean`, `#Europe`
+
+- **Mermaid Diagrams**: Visual timelines and relationships
+  ```mermaid
+  timeline
+      title Punic Wars Timeline
+      264-241 BC : First Punic War
+                 : Rome vs Carthage naval battles
+      218-201 BC : Second Punic War
+                 : Hannibal crosses Alps
+      149-146 BC : Third Punic War
+                 : Destruction of Carthage
+  ```
+
+- **Concise Structure**:
+  - **Summary**: 2-3 bullet core narrative
+  - **Historical Context**: Background with nested relationships
+  - **Key Events**: Chronological developments with heavy linking
+  - **Notable Quotes**: 2-3 significant quotes
+
+**No fluff. Dense information. Maximum graph connectivity.**
 
 ## Architecture
 
