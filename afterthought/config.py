@@ -9,6 +9,37 @@ from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def find_env_file() -> Optional[Path]:
+    """
+    Find .env file in multiple locations.
+
+    Search order:
+    1. Current working directory
+    2. ~/.afterthought/.env
+    3. Project directory (where this file is located)
+
+    Returns:
+        Path to .env file if found, None otherwise
+    """
+    # Check current directory
+    cwd_env = Path.cwd() / ".env"
+    if cwd_env.exists():
+        return cwd_env
+
+    # Check ~/.afterthought/.env
+    home_env = Path.home() / ".afterthought" / ".env"
+    if home_env.exists():
+        return home_env
+
+    # Check package directory (where config.py is located)
+    package_dir = Path(__file__).parent.parent
+    package_env = package_dir / ".env"
+    if package_env.exists():
+        return package_env
+
+    return None
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
@@ -64,7 +95,7 @@ class Settings(BaseSettings):
     )
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=find_env_file(),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore"
@@ -197,13 +228,25 @@ def get_settings(validate: bool = True) -> Settings:
             if validate:
                 _settings.validate_paths()
         except Exception as e:
+            env_file = find_env_file()
+            env_locations = (
+                "\nChecked locations:\n"
+                f"  1. Current directory: {Path.cwd() / '.env'}\n"
+                f"  2. Home config: {Path.home() / '.afterthought' / '.env'}\n"
+                f"  3. Package directory: {Path(__file__).parent.parent / '.env'}\n"
+            )
+
             raise RuntimeError(
                 f"Failed to load configuration: {e}\n\n"
                 "Make sure you have:\n"
-                "1. Created a .env file (copy from .env.example)\n"
+                "1. Created a .env file with your settings\n"
                 "2. Set GEMINI_API_KEY in your .env file\n"
-                "3. Set OBSIDIAN_OUTPUT_PATH in your .env file\n"
-                "4. Apple Podcasts is installed and has been used"
+                "3. Set OBSIDIAN_OUTPUT_PATH in your .env file\n\n"
+                "Put .env file in one of these locations:\n"
+                f"  • {Path.home() / '.afterthought' / '.env'} (recommended)\n"
+                f"  • Current directory: {Path.cwd() / '.env'}\n\n"
+                f"Currently found: {env_file if env_file else 'No .env file found'}\n"
+                f"{env_locations}"
             ) from e
 
     return _settings
