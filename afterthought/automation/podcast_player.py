@@ -40,10 +40,14 @@ class PodcastPlayerAutomation:
             return False
 
         print(f"    🎧 Triggering playback to fetch transcript...")
+        print(f"    📍 Episode Store ID: {episode_id}")
+        if episode.podcast_store_id:
+            print(f"    📍 Podcast Store ID: {episode.podcast_store_id}")
 
         # Build podcasts:// URL
         # Format: podcasts://podcasts.apple.com/us/podcast/NAME/idXXXXXX?i=EPISODE_ID
         podcast_url = self._build_podcast_url(episode, episode_id)
+        print(f"    🔗 Opening: {podcast_url}")
 
         # Execute AppleScript to open and play the episode
         success = self._run_applescript_playback(podcast_url)
@@ -59,7 +63,7 @@ class PodcastPlayerAutomation:
         """
         Extract Apple episode ID from episode metadata.
 
-        The episode ID is typically in the asset URL or can be derived from UUID.
+        Uses ZSTORETRACKID from the database, which is the official Apple Store track ID.
 
         Args:
             episode: Episode metadata
@@ -67,41 +71,22 @@ class PodcastPlayerAutomation:
         Returns:
             Episode ID string, or None if not found
         """
-        # Try to extract from asset URL
-        # Format: https://.../.../episode_XXXXXX.mp3 or similar
-        if episode.asset_url:
-            # Look for common patterns in asset URLs
-            # Sometimes the ID is in the URL path
-            asset_url = episode.asset_url
+        # Use the store_track_id from the database (this is the correct Apple Store ID)
+        if episode.store_track_id:
+            return str(episode.store_track_id)
 
-            # Try to find numeric ID in URL
-            import re
+        # Fallback: try GUID if available
+        if episode.guid:
+            return episode.guid
 
-            # Pattern 1: Look for /id followed by numbers
-            match = re.search(r'/id(\d+)', asset_url)
-            if match:
-                return match.group(1)
-
-            # Pattern 2: Look for i= parameter
-            match = re.search(r'[?&]i=(\d+)', asset_url)
-            if match:
-                return match.group(1)
-
-            # Pattern 3: Episode GUID might be usable
-            # The UUID might be the episode ID in some cases
-            if episode.uuid:
-                # Try using UUID directly (Apple sometimes uses this)
-                # Remove any non-numeric characters
-                numeric_id = re.sub(r'\D', '', episode.uuid)
-                if numeric_id:
-                    return numeric_id
-
-        # Fallback: use UUID as-is (might work for some episodes)
+        # Last resort: use UUID
         return episode.uuid
 
     def _build_podcast_url(self, episode: Episode, episode_id: str) -> str:
         """
         Build podcasts:// URL for opening episode.
+
+        Format: podcasts://podcasts.apple.com/us/podcast/NAME/idPODCAST_ID?i=EPISODE_ID
 
         Args:
             episode: Episode metadata
@@ -112,11 +97,16 @@ class PodcastPlayerAutomation:
         """
         # Sanitize podcast name for URL
         import urllib.parse
-        podcast_name = urllib.parse.quote(episode.podcast_channel.replace(' ', '-').lower())
+        podcast_name = episode.podcast_channel.replace(' ', '-').lower()
+        podcast_name = urllib.parse.quote(podcast_name)
 
-        # Build URL (we don't always have podcast ID, but episode ID is enough)
-        # Format: podcasts://podcasts.apple.com/us/podcast/NAME?i=EPISODE_ID
-        url = f"podcasts://podcasts.apple.com/us/podcast/{podcast_name}?i={episode_id}"
+        # Build URL with podcast store ID if available
+        # Format: podcasts://podcasts.apple.com/us/podcast/the-history-of-rome/id261654474?i=EPISODE_ID
+        if episode.podcast_store_id:
+            url = f"podcasts://podcasts.apple.com/us/podcast/{podcast_name}/id{episode.podcast_store_id}?i={episode_id}"
+        else:
+            # Fallback without podcast ID (less reliable)
+            url = f"podcasts://podcasts.apple.com/us/podcast/{podcast_name}?i={episode_id}"
 
         return url
 

@@ -27,6 +27,9 @@ class Episode:
     transcript_identifier: Optional[str]
     transcript_provider: Optional[str]
     asset_url: Optional[str]
+    store_track_id: Optional[int] = None  # Apple Store episode ID
+    podcast_store_id: Optional[int] = None  # Apple Store podcast ID
+    guid: Optional[str] = None  # Episode GUID
 
     @property
     def duration_formatted(self) -> str:
@@ -194,7 +197,10 @@ class PodcastDatabase:
                 e.ZENTITLEDTRANSCRIPTPROVIDER,
                 e.ZFREETRANSCRIPTIDENTIFIER,
                 e.ZFREETRANSCRIPTPROVIDER,
-                e.ZASSETURL
+                e.ZASSETURL,
+                e.ZSTORETRACKID,
+                e.ZGUID,
+                p.ZSTORECOLLECTIONID as podcast_store_id
             FROM ZMTEPISODE e
             JOIN ZMTPODCAST p ON e.ZPODCAST = p.Z_PK
             WHERE e.ZLASTDATEPLAYED > ?
@@ -248,6 +254,9 @@ class PodcastDatabase:
                 transcript_identifier=transcript_id,
                 transcript_provider=transcript_provider,
                 asset_url=row["ZASSETURL"],
+                store_track_id=row["ZSTORETRACKID"],
+                podcast_store_id=row["podcast_store_id"],
+                guid=row["ZGUID"],
             )
             episodes.append(episode)
 
