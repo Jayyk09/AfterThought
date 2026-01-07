@@ -152,7 +152,8 @@ class PodcastDatabase:
         matches = process.extract(query, channels, scorer=fuzz.token_sort_ratio)
 
         # Filter by threshold and return
-        return [(match, score) for match, score, _ in matches if score >= threshold]
+        # process.extract returns (match, score) tuples
+        return [(match, score) for match, score in matches if score >= threshold]
 
     def get_episodes_by_date(
         self,
