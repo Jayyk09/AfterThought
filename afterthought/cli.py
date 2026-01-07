@@ -7,7 +7,7 @@ from typing import Optional
 
 import click
 
-from config import get_settings
+from afterthought.config import get_settings
 from afterthought.db.podcast_db import PodcastDatabase, Episode
 from afterthought.db.tracking_db import TrackingDatabase
 from afterthought.parsers.ttml_parser import parse_ttml_file

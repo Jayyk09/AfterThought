@@ -23,48 +23,46 @@ AfterThought automatically extracts transcripts from Apple Podcasts, generates A
 
 ## Installation
 
-### 1. Clone the repository
+### Quick Install (Recommended)
 
+**Option 1: Using pipx (global access, isolated environment)**
 ```bash
-git clone https://github.com/yourusername/AfterThought.git
+git clone https://github.com/Jayyk09/AfterThought.git
 cd AfterThought
+brew install pipx
+pipx install .
 ```
 
-### 2. Create a virtual environment (recommended)
-
+**Option 2: Using pip (editable install)**
 ```bash
+git clone https://github.com/Jayyk09/AfterThought.git
+cd AfterThought
+pip install -e .
+```
+
+**Option 3: Traditional venv (manual activation)**
+```bash
+git clone https://github.com/Jayyk09/AfterThought.git
+cd AfterThought
 python3 -m venv venv
-source venv/bin/activate  # On macOS/Linux
-```
-
-### 3. Install dependencies
-
-```bash
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+📖 **See [INSTALL.md](INSTALL.md) for detailed installation instructions and shell wrapper setup.**
+
+### Configure
 
 ```bash
 cp .env.example .env
+# Edit .env with your settings
 ```
 
-Edit `.env` and set:
+Required settings:
+- `GEMINI_API_KEY` - Get free key at [Google AI Studio](https://aistudio.google.com/app/apikey)
+- `OBSIDIAN_OUTPUT_PATH` - Path to your Obsidian vault
 
-```bash
-# Required
-GEMINI_API_KEY=your_actual_api_key_here
-OBSIDIAN_OUTPUT_PATH=~/Documents/Obsidian/Podcasts
-
-# Optional (auto-detected if not set)
-# APPLE_PODCASTS_DB_PATH=~/Library/Group Containers/...
-# TTML_CACHE_PATH=~/Library/Group Containers/...
-```
-
-To get your Gemini API key:
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Click "Create API Key"
-3. Copy the key to your `.env` file
+Apple Podcasts paths are auto-detected!
 
 ## Usage
 
