@@ -1,10 +1,13 @@
 """YouTube transcript fetching and parsing."""
 
 import re
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 from urllib.parse import parse_qs, urlparse
+
+import requests
 
 try:
     from youtube_transcript_api import YouTubeTranscriptApi
@@ -46,6 +49,57 @@ class YouTubeClient:
             preserve_timestamps: Whether to include timestamps in transcript
         """
         self.preserve_timestamps = preserve_timestamps
+
+    def fetch_video_metadata(self, video_id: str) -> dict:
+        """
+        Fetch video metadata (title, channel) from YouTube page.
+
+        Args:
+            video_id: YouTube video ID
+
+        Returns:
+            Dict with 'title' and 'channel' keys
+        """
+        try:
+            url = f"https://www.youtube.com/watch?v={video_id}"
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+
+            html = response.text
+
+            # Try to extract from ytInitialPlayerResponse JSON
+            match = re.search(r'ytInitialPlayerResponse\s*=\s*({.+?});', html)
+            if match:
+                try:
+                    data = json.loads(match.group(1))
+                    title = data.get("videoDetails", {}).get("title", "")
+                    channel = data.get("videoDetails", {}).get("author", "")
+                    if title:
+                        return {"title": title, "channel": channel}
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+            # Fallback: extract from meta tags
+            title_match = re.search(r'<meta name="title" content="([^"]+)"', html)
+            if title_match:
+                title = title_match.group(1)
+                channel_match = re.search(r'<link itemprop="name" content="([^"]+)"', html)
+                channel = channel_match.group(1) if channel_match else ""
+                return {"title": title, "channel": channel}
+
+            # Last resort: og:title
+            og_title = re.search(r'<meta property="og:title" content="([^"]+)"', html)
+            if og_title:
+                return {"title": og_title.group(1), "channel": ""}
+
+        except Exception:
+            pass
+
+        # Return empty if all methods fail
+        return {"title": "", "channel": ""}
 
     def extract_video_id(self, url: str) -> Optional[str]:
         """
@@ -188,11 +242,14 @@ class YouTubeClient:
         # Construct standard URL
         video_url = f"https://www.youtube.com/watch?v={video_id}"
 
+        # Fetch metadata
+        metadata = self.fetch_video_metadata(video_id)
+
         # Initialize video object
         video = YouTubeVideo(
             video_id=video_id,
-            title="",  # Will be populated if we add metadata fetching
-            channel="",
+            title=metadata.get("title", "") or video_id,  # Fallback to video_id
+            channel=metadata.get("channel", ""),
             url=video_url,
         )
 

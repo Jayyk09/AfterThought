@@ -493,7 +493,9 @@ def process_youtube(url: str, settings, verbose: bool, force: bool, dry_run: boo
             click.echo("✗ No transcript available for this video", err=True)
             sys.exit(1)
 
-        click.echo(f"✓ Video: {video.video_id}")
+        click.echo(f"✓ Video: {video.title}")
+        if video.channel:
+            click.echo(f"  Channel: {video.channel}")
         click.echo(f"  Language: {video.transcript_language}")
 
         word_count = len(video.transcript.split())
@@ -545,8 +547,8 @@ def process_youtube(url: str, settings, verbose: bool, force: bool, dry_run: boo
         # Create a fake Episode object for markdown writer compatibility
         fake_episode = Episode(
             uuid=video.video_id,
-            title=video.video_id,  # Will be improved with metadata API later
-            podcast_channel="YouTube",
+            title=video.title,
+            podcast_channel=video.channel or "YouTube",
             podcast_author="",
             duration=0,
             publish_date=datetime.now(),
@@ -569,8 +571,8 @@ def process_youtube(url: str, settings, verbose: bool, force: bool, dry_run: boo
         with TrackingDatabase(settings.tracking_db_path) as tracking_db:
             tracking_db.mark_processed(
                 episode_uuid=video.video_id,
-                episode_title=video.video_id,
-                podcast_channel="YouTube",
+                episode_title=video.title,
+                podcast_channel=video.channel or "YouTube",
                 output_file_path=str(output_path),
                 gemini_tokens_used=total_tokens,
                 success=True,

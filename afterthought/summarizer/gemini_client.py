@@ -23,68 +23,40 @@ class SummaryResult:
 class GeminiClient:
     """Client for Google Gemini API summarization."""
 
-    YOUTUBE_PROMPT_TEMPLATE = """You are an expert knowledge management specialist. Convert this video transcript into a concise, interconnected summary optimized for Obsidian's graph view.
+    YOUTUBE_PROMPT_TEMPLATE = """Summarize this video transcript as concise notes optimized for Obsidian's graph view.
 
-**CRITICAL OBSIDIAN FORMATTING RULES:**
+**INSTRUCTIONS:**
+- Only summarize what's actually in the transcript - don't add historical context or extra information
+- Wrap important concepts, people, places, and technologies in [[double brackets]]
+- Add relevant tags using #hashtag format
+- Use bullet points, not paragraphs
+- Be direct and information-dense
 
-1. **Wiki Links for Connections:** Wrap ALL important concepts, people, places, technologies, companies, and themes in [[double brackets]]
-   - Examples: [[Machine Learning]], [[Elon Musk]], [[Neural Networks]], [[Tesla]], [[Python Programming]]
-   - This creates nodes in Obsidian's graph view
-
-2. **Tags for Categories:** Add relevant tags using #hashtag format
-   - Use tags for: topics (#Technology, #Science, #Business), domains (#AI, #Engineering), types (#Tutorial, #Interview)
-
-3. **Mermaid Diagrams:** Include ONE timeline, flowchart, or relationship diagram using Mermaid syntax
-   - For process explanations: use flowchart
-   - For chronological content: use timeline
-   - For concept relationships: use graph
-
-4. **Concise Bullets:** Use nested bullet points, not paragraphs. Be direct and information-dense.
-
-**REQUIRED STRUCTURE:**
+**STRUCTURE:**
 
 ## Summary
-- 2-3 concise bullet points capturing the core message
-- Link all key concepts: [[Person]], [[Technology]], [[Company]], [[Concept]]
+- 2-3 bullet points capturing the main points from the video
+- Link key concepts mentioned: [[Person]], [[Technology]], [[Concept]]
 
-## Key Topics & Insights
-- Thematic breakdown of main points
-- Nested structure showing relationships:
-  - [[Main Topic]]
-    - [[Subtopic]] and key insight
-    - [[Related Concept]]
-    - [[Practical Application]]
-
-## Important Points
-- Critical takeaways or notable information
-- Each point should link entities: "[[Expert]] discusses [[Technology]] impact on [[Industry]]"
-- Deep nesting for cause-effect relationships
+## Key Points
+- Main topics discussed in the transcript
+- Nested bullets for details:
+  - [[Topic]]
+    - Important detail or insight
+    - Related point
 
 ## Notable Quotes
-- 2-3 significant quotes (if any)
-- Brief context or significance (1 line max)
+- 2-3 significant quotes from the transcript (if any)
 
-## Visual Diagram
+## Diagram (Optional)
+If helpful, add ONE simple Mermaid diagram:
 ```mermaid
 flowchart LR
-    A[Concept 1] --> B[Concept 2]
-    B --> C[Outcome]
+    A[Topic] --> B[Subtopic]
 ```
 
-**TAGS TO ADD:**
-Add 5-10 relevant tags at the bottom in this format:
-Tags: #Topic #SubTopic #Domain #Type #KeyConcept
-
-**LINKING STRATEGY:**
-- Link people: [[Name]]
-- Link technologies: [[Technology Name]]
-- Link companies: [[Company]]
-- Link concepts: [[Concept]]
-- Link domains: [[Field of Study]]
-
-Be CONCISE. No fluff. Dense information. Heavy linking for graph connectivity.
-
----
+**TAGS:**
+Tags: #Topic #Category #Type
 
 Transcript:
 {transcript}"""
