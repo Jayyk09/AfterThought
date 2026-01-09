@@ -14,6 +14,7 @@ from afterthought.parsers.ttml_parser import parse_ttml_file
 from afterthought.summarizer.gemini_client import GeminiClient
 from afterthought.output.markdown_writer import MarkdownWriter
 from afterthought.automation.podcast_player import PodcastPlayerAutomation
+from afterthought.sources.youtube import fetch_youtube_transcript
 
 
 @click.command()
@@ -57,6 +58,12 @@ from afterthought.automation.podcast_player import PodcastPlayerAutomation
     is_flag=True,
     help="Automatically fetch missing transcripts by triggering playback in Podcasts app",
 )
+@click.option(
+    "--youtube",
+    "-y",
+    default=None,
+    help="Summarize a YouTube video by URL (e.g., 'https://youtube.com/watch?v=...')",
+)
 def main(
     channel: Optional[str],
     days: Optional[int],
@@ -65,6 +72,7 @@ def main(
     verbose: bool,
     stats: bool,
     fetch_missing: bool,
+    youtube: Optional[str],
 ):
     """
     AfterThought - Summarize your podcast episodes.
@@ -100,6 +108,11 @@ def main(
         # Show statistics if requested
         if stats:
             show_statistics(settings)
+            return
+
+        # Handle YouTube mode
+        if youtube:
+            process_youtube(youtube, settings, verbose, force, dry_run)
             return
 
         # Print header
@@ -443,6 +456,139 @@ def show_statistics(settings):
             click.echo(f"  - {channel}: {count}")
 
     click.echo()
+
+
+def process_youtube(url: str, settings, verbose: bool, force: bool, dry_run: bool):
+    """
+    Process a YouTube video: fetch transcript, summarize, write markdown.
+
+    Args:
+        url: YouTube video URL
+        settings: Application settings
+        verbose: Verbose output flag
+        force: Force re-processing flag
+        dry_run: Dry run flag
+    """
+    from datetime import datetime
+
+    click.echo("\n" + "=" * 60)
+    click.echo("  AfterThought - YouTube Summarization")
+    click.echo("=" * 60 + "\n")
+
+    click.echo(f"Configuration:")
+    click.echo(f"  Output Path: {settings.obsidian_output_path}")
+    click.echo(f"  YouTube URL: {url}")
+    if force:
+        click.echo(f"  Force Re-process: Enabled")
+    if dry_run:
+        click.echo(f"  Dry Run: Enabled (no changes will be made)")
+    click.echo()
+
+    try:
+        # Fetch video info and transcript
+        click.echo("⏳ Fetching YouTube transcript...")
+        video = fetch_youtube_transcript(url, preserve_timestamps=False)
+
+        if not video.transcript:
+            click.echo("✗ No transcript available for this video", err=True)
+            sys.exit(1)
+
+        click.echo(f"✓ Video: {video.video_id}")
+        click.echo(f"  Language: {video.transcript_language}")
+
+        word_count = len(video.transcript.split())
+        click.echo(f"  Transcript: {word_count:,} words\n")
+
+        # Check if already processed
+        with TrackingDatabase(settings.tracking_db_path) as tracking_db:
+            if not force and tracking_db.is_processed(video.video_id):
+                click.echo("✓ Video already processed! Use --force to re-process.")
+                sys.exit(0)
+
+        if dry_run:
+            click.echo("Dry run - video that would be processed:")
+            click.echo(f"  Video ID: {video.video_id}")
+            click.echo(f"  URL: {video.url}")
+            click.echo(f"  Transcript: Yes ({word_count:,} words)")
+            click.echo("\nDry run complete. No changes made.")
+            return
+
+        # Initialize Gemini client with YouTube-specific prompt
+        gemini_client = GeminiClient(
+            api_key=settings.gemini_api_key,
+            model=settings.gemini_model,
+            max_retries=settings.max_retries,
+            prompt_template=GeminiClient.YOUTUBE_PROMPT_TEMPLATE,
+        )
+
+        # Check transcript length
+        is_valid, estimated_tokens = gemini_client.check_transcript_length(video.transcript)
+        if not is_valid:
+            click.echo(f"✗ Transcript too long ({estimated_tokens:,} tokens)", err=True)
+            sys.exit(1)
+
+        # Summarize
+        click.echo("⏳ Summarizing with Gemini API...")
+        summary = gemini_client.summarize(
+            video.transcript,
+            episode_title=f"YouTube: {video.video_id}"
+        )
+
+        if not summary.success:
+            click.echo(f"✗ Summarization failed: {summary.error}", err=True)
+            sys.exit(1)
+
+        total_tokens = summary.input_tokens + summary.output_tokens
+        if verbose:
+            click.echo(f"✓ Summary generated ({total_tokens:,} tokens)")
+
+        # Create a fake Episode object for markdown writer compatibility
+        fake_episode = Episode(
+            uuid=video.video_id,
+            title=video.video_id,  # Will be improved with metadata API later
+            podcast_channel="YouTube",
+            podcast_author="",
+            duration=0,
+            publish_date=datetime.now(),
+            last_played=datetime.now(),
+            transcript_identifier=None,
+            transcript_provider=video.transcript_language,
+            asset_url=video.url,
+        )
+
+        # Write markdown
+        click.echo("⏳ Writing markdown...")
+        markdown_writer = MarkdownWriter(settings.obsidian_output_path)
+        output_path = markdown_writer.write_summary(
+            episode=fake_episode,
+            summary=summary,
+            transcript_available=True,
+        )
+
+        # Mark as processed
+        with TrackingDatabase(settings.tracking_db_path) as tracking_db:
+            tracking_db.mark_processed(
+                episode_uuid=video.video_id,
+                episode_title=video.video_id,
+                podcast_channel="YouTube",
+                output_file_path=str(output_path),
+                gemini_tokens_used=total_tokens,
+                success=True,
+            )
+
+        click.echo(f"✓ Saved: {output_path}")
+        click.echo(f"\nGemini Tokens Used: {total_tokens:,}")
+        click.echo("\n✨ Done!\n")
+
+    except ValueError as e:
+        click.echo(f"✗ Error: {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"✗ Fatal error: {e}", err=True)
+        if verbose:
+            import traceback
+            traceback.print_exc()
+        sys.exit(1)
 
 
 if __name__ == "__main__":

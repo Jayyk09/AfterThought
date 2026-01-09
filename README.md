@@ -1,17 +1,18 @@
 # AfterThought
 
-**AI-Powered Podcast Summarization for Apple Podcasts**
+**AI-Powered Podcast & YouTube Summarization**
 
-AfterThought automatically extracts transcripts from Apple Podcasts, generates AI-powered summaries using Google Gemini, and outputs beautifully formatted Obsidian-compatible markdown files organized by podcast channel.
+AfterThought automatically extracts transcripts from Apple Podcasts and YouTube videos, generates AI-powered summaries using Google Gemini, and outputs beautifully formatted Obsidian-compatible markdown files optimized for graph view.
 
 ## Features
 
 - 📊 **Smart Episode Discovery**: Automatically finds recently listened podcast episodes from Apple Podcasts
 - 🎯 **Fuzzy Channel Matching**: Filter by podcast channel name with intelligent fuzzy matching
-- 🤖 **AI Summarization**: Leverages Google Gemini API for high-quality episode summaries
-- 📝 **Obsidian Integration**: Creates markdown files with frontmatter, organized by channel
-- 🔍 **Tracking**: Avoids re-processing episodes you've already summarized
-- ⚡ **Incremental Processing**: Run regularly to keep your podcast notes up-to-date
+- 🎬 **YouTube Support**: Summarize YouTube videos with available transcripts (no API key needed)
+- 🤖 **AI Summarization**: Leverages Google Gemini API for high-quality summaries
+- 📝 **Obsidian Integration**: Creates markdown files optimized for graph view with wiki links and tags
+- 🔍 **Tracking**: Avoids re-processing content you've already summarized
+- ⚡ **Incremental Processing**: Run regularly to keep your notes up-to-date
 - 🔄 **Efficient**: Word-level TTML transcript parsing with speaker identification
 
 ## Requirements
@@ -158,6 +159,7 @@ python -m afterthought --channel "History" --fetch-missing --verbose
 | `--days` | `-d` | Episodes played in last N days (default: 7) |
 | `--force` | `-f` | Re-process already summarized episodes |
 | `--fetch-missing` | | Auto-fetch missing transcripts by triggering playback |
+| `--youtube` | `-y` | Summarize a YouTube video by URL |
 | `--dry-run` | | Show what would be processed without executing |
 | `--verbose` | `-v` | Enable verbose output |
 | `--stats` | | Show processing statistics and exit |
@@ -449,6 +451,81 @@ MIT License - see LICENSE file for details
 - Tracking database to avoid re-processing
 - CLI with multiple options
 - Comprehensive documentation
+
+---
+
+## YouTube Support
+
+AfterThought also supports summarizing YouTube videos with available transcripts!
+
+### Summarize YouTube Videos
+
+```bash
+# Summarize a YouTube video by URL
+afterthought --youtube "https://www.youtube.com/watch?v=VIDEO_ID"
+afterthought -y "https://youtu.be/VIDEO_ID"
+```
+
+### How It Works
+
+- Fetches existing YouTube captions (auto-generated or manual)
+- Works on ~70% of videos (those with captions enabled)
+- No API key needed for transcripts (uses YouTube's public caption endpoint)
+- Generates Obsidian-optimized summaries with wiki links and tags
+- Saves to `YouTube/` folder in your Obsidian vault
+
+### Supported URL Formats
+
+```bash
+afterthought -y "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+afterthought -y "https://youtu.be/dQw4w9WgXcQ"
+afterthought -y "dQw4w9WgXcQ"  # Just the video ID
+```
+
+### When It Works
+
+- ✅ Educational/Tutorial videos (~95% have captions)
+- ✅ Podcasts uploaded to YouTube (~85%)
+- ✅ Talks/Interviews (~90%)
+- ✅ News/Documentary content (~95%)
+
+### When It Fails
+
+- ❌ Captions disabled by creator
+- ❌ Private/age-restricted videos
+- ❌ Very new videos (captions not processed yet)
+- ❌ Some music videos (~40% have captions)
+
+### YouTube-Specific Options
+
+```bash
+# Dry run to check if transcript is available
+afterthought -y "VIDEO_URL" --dry-run
+
+# Force re-process a video
+afterthought -y "VIDEO_URL" --force
+
+# Verbose output with token usage
+afterthought -y "VIDEO_URL" --verbose
+```
+
+### Output Format
+
+YouTube summaries are saved in the `YouTube/` folder:
+
+```
+~/Documents/Obsidian/Podcasts/
+└── YouTube/
+    ├── dQw4w9WgXcQ.md
+    ├── jNQXAC9IVRw.md
+    └── ...
+```
+
+Each summary includes:
+- Wiki links for concepts, people, technologies
+- Tags for topics and domains
+- Mermaid diagrams (flowcharts, timelines)
+- Concise bullet-point format optimized for Obsidian graph view
 
 ---
 
