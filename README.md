@@ -472,7 +472,8 @@ afterthought -y "https://youtu.be/VIDEO_ID"
 - Works on ~70% of videos (those with captions enabled)
 - No API key needed for transcripts (uses YouTube's public caption endpoint)
 - Generates Obsidian-optimized summaries with wiki links and tags
-- Saves to `YouTube/` folder in your Obsidian vault
+- Saves to `YouTube/Channel Name/` folders in your Obsidian vault
+- Emphasizes visual diagrams for educational content
 
 ### Supported URL Formats
 
@@ -511,21 +512,26 @@ afterthought -y "VIDEO_URL" --verbose
 
 ### Output Format
 
-YouTube summaries are saved in the `YouTube/` folder:
+YouTube summaries are saved in `YouTube/Channel Name/` folders:
 
 ```
 ~/Documents/Obsidian/Podcasts/
-└── YouTube/
-    ├── dQw4w9WgXcQ.md
-    ├── jNQXAC9IVRw.md
-    └── ...
+├── All-In Podcast/
+│   └── E150 Tech Trends 2026.md
+├── YouTube/
+│   ├── 3Blue1Brown/
+│   │   └── Linear transformations and matrices.md
+│   ├── Veritasium/
+│   │   └── The Physics of Black Holes.md
+│   └── ...
 ```
 
 Each summary includes:
 - Wiki links for concepts, people, technologies
 - Tags for topics and domains
-- Mermaid diagrams (flowcharts, timelines)
+- Mermaid diagrams (emphasized for educational content)
 - Concise bullet-point format optimized for Obsidian graph view
+- Only summarizes transcript content (no extra context added)
 
 ---
 

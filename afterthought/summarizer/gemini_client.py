@@ -31,6 +31,7 @@ class GeminiClient:
 - Add relevant tags using #hashtag format
 - Use bullet points, not paragraphs
 - Be direct and information-dense
+- For educational/tutorial content, ALWAYS include a visual diagram
 
 **STRUCTURE:**
 
@@ -48,12 +49,20 @@ class GeminiClient:
 ## Notable Quotes
 - 2-3 significant quotes from the transcript (if any)
 
-## Diagram (Optional)
-If helpful, add ONE simple Mermaid diagram:
+## Visual Diagram
+For educational content, create a Mermaid diagram to visualize:
+- Processes: use flowchart
+- Hierarchies: use graph
+- Steps/Timeline: use flowchart TD
+- Relationships: use graph LR
+
 ```mermaid
-flowchart LR
-    A[Topic] --> B[Subtopic]
+flowchart TD
+    A[Concept/Step 1] --> B[Concept/Step 2]
+    B --> C[Outcome/Result]
 ```
+
+For non-educational content, omit this section if not useful.
 
 **TAGS:**
 Tags: #Topic #Category #Type

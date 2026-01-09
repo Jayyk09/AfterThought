@@ -560,7 +560,9 @@ def process_youtube(url: str, settings, verbose: bool, force: bool, dry_run: boo
 
         # Write markdown
         click.echo("⏳ Writing markdown...")
-        markdown_writer = MarkdownWriter(settings.obsidian_output_path)
+        # Use YouTube/ subfolder for all YouTube content
+        youtube_output_path = settings.obsidian_output_path / "YouTube"
+        markdown_writer = MarkdownWriter(youtube_output_path)
         output_path = markdown_writer.write_summary(
             episode=fake_episode,
             summary=summary,
